@@ -1,0 +1,3 @@
+pytest>=8
+pytest-benchmark>=4
+matplotlib>=3.7

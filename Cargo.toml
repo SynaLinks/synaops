@@ -1,0 +1,16 @@
+[package]
+name = "synaops"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Native Rust implementations of synalinks JSON/schema operations."
+
+[lib]
+name = "synaops"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+pythonize = "0.22"
+serde_json = { version = "1", features = ["preserve_order"] }
+regex = "1"
