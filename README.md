@@ -76,7 +76,7 @@ Parity with the Python reference is verified before each timing run
 
 Ratio `py_median / rs_median` per op. Higher is better; dashed line is parity (1×).
 
-![speedup](bench/speedup.png)
+![speedup](https://raw.githubusercontent.com/SynaLinks/synaops/main/bench/speedup.png)
 
 | Operation | small (12) | medium (96) | large (600) |
 |---|---:|---:|---:|
@@ -105,7 +105,7 @@ by the PyO3 dict-conversion boundary, which is why they cluster around 2–4×.
 
 Log scale, lower is better. Rows are the three payload sizes.
 
-![before/after](bench/before_after.png)
+![before/after](https://raw.githubusercontent.com/SynaLinks/synaops/main/bench/before_after.png)
 
 See `bench/README.md` for the harness, payload shapes, and how to
 regenerate these charts.

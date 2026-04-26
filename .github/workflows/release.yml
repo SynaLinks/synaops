@@ -3,10 +3,16 @@ name: Release
 # Triggers on a version tag push (e.g. `git tag v0.1.0 && git push --tags`)
 # or manually via the Actions UI.
 #
-# Requires either:
-#   - repository secret `PYPI_API_TOKEN` set to a PyPI API token, OR
-#   - PyPI Trusted Publishing configured for this repo (then drop the env
-#     block on the `release` job and use id-token: write permissions).
+# Builds abi3 wheels (cp310-abi3-*) — one wheel per platform/arch covers
+# every Python 3.10+.
+#
+# One-time setup:
+#   1. Create a GitHub Environment named `pypi` (Settings → Environments).
+#      Ideally restrict deployment to tags matching `v*`.
+#   2. Add `PYPI_API_TOKEN` as a secret on that environment (scoping it to
+#      the env is more restrictive than a repo-level secret).
+# To migrate to Trusted Publishing later: drop the env block, add
+# `permissions: id-token: write`, and use pypa/gh-action-pypi-publish.
 
 on:
   push:
@@ -17,7 +23,7 @@ permissions:
   contents: read
 
 jobs:
-  linux:
+  manylinux:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -27,16 +33,38 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist
           manylinux: auto
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-${{ matrix.target }}
+          name: wheels-manylinux-${{ matrix.target }}
+          path: dist
+
+  musllinux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          manylinux: musllinux_1_2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-musllinux-${{ matrix.target }}
           path: dist
 
   macos:
@@ -49,12 +77,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.target }}
@@ -70,13 +98,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
           architecture: ${{ matrix.target }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-${{ matrix.target }}
@@ -99,9 +127,11 @@ jobs:
   release:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: [linux, macos, windows, sdist]
+    needs: [manylinux, musllinux, macos, windows, sdist]
     if: startsWith(github.ref, 'refs/tags/')
-    environment: pypi
+    environment:
+      name: pypi
+      url: https://pypi.org/p/synaops
     steps:
       - uses: actions/download-artifact@v4
         with:

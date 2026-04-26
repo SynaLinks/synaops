@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  test-linux:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -39,3 +39,35 @@ jobs:
 
       - name: Parity tests
         run: pytest bench/test_parity.py -v
+
+  test-cross:
+    name: smoke ${{ matrix.os }} / py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        python-version: ["3.10", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo test
+        run: cargo test --release
+
+      - name: Build and install synaops
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin
+          maturin develop --release
+
+      - name: Import smoke test
+        run: python -c "import synaops; print(synaops.prefix_json({'a': 1}, 'pre'))"
