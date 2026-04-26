@@ -46,5 +46,5 @@ under `.benchmarks/` and renders a grouped speedup chart.
 Keys rotate through six realistic variants (`answer_*`, `item_*`,
 `items_*`, `nested_*` with depth-3 objects, `person_*` via `$ref`,
 `people_*` arrays of `$ref`-based objects) so every operation — including
-`factorize_*` / `decompose_*` / `*_mask_*` and the schema paths that walk
-`$defs` — has realistic work to do.
+`factorize_*` / `*_mask_*` and the schema paths that walk `$defs` — has
+realistic work to do.

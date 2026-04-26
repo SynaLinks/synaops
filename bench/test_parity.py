@@ -19,7 +19,7 @@ def test_json_parity(op, size_name, json_payload_by_size):
 
     base = op_name.removesuffix("_pattern")
     payload = json_payload_by_size[size_name]
-    py_out = call(getattr(py_json, base), payload)
+    py_out = call(getattr(py_json, f"_py_{base}"), payload)
     rs_out = call(getattr(rs, base), payload)
     assert py_out == rs_out, f"{op_name}[{size_name}]: py != rs"
 
@@ -33,6 +33,6 @@ def test_schema_parity(op, size_name, schema_payload_by_size):
 
     base = op_name.removesuffix("_pattern")
     payload = schema_payload_by_size[size_name]
-    py_out = call(getattr(py_sch, base), payload)
+    py_out = call(getattr(py_sch, f"_py_{base}"), payload)
     rs_out = call(getattr(rs, base), payload)
     assert py_out == rs_out, f"{op_name}[{size_name}]: py != rs"

@@ -27,7 +27,7 @@ def test_json_py(benchmark, op, size_name, json_payload_by_size):
     from synalinks.src.backend.common import json_utils as py_json
 
     base = op_name.removesuffix("_pattern")
-    fn = getattr(py_json, base)
+    fn = getattr(py_json, f"_py_{base}")
     payload = json_payload_by_size[size_name]
 
     benchmark.group = f"{op_name}[{size_name}]"
@@ -57,7 +57,7 @@ def test_schema_py(benchmark, op, size_name, schema_payload_by_size):
     from synalinks.src.backend.common import json_schema_utils as py_sch
 
     base = op_name.removesuffix("_pattern")
-    fn = getattr(py_sch, base)
+    fn = getattr(py_sch, f"_py_{base}")
     payload = schema_payload_by_size[size_name]
 
     benchmark.group = f"{op_name}[{size_name}]"

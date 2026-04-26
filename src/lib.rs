@@ -70,15 +70,6 @@ fn factorize_json<'py>(
 }
 
 #[pyfunction]
-fn decompose_json<'py>(
-    py: Python<'py>,
-    json: &Bound<'py, PyAny>,
-) -> PyResult<Bound<'py, PyAny>> {
-    let v = to_value(json)?;
-    from_value(py, &json_utils::decompose_json(v))
-}
-
-#[pyfunction]
 #[pyo3(signature = (json, mask=None, pattern=None, recursive=true))]
 fn out_mask_json<'py>(
     py: Python<'py>,
@@ -167,15 +158,6 @@ fn factorize_schema<'py>(
 }
 
 #[pyfunction]
-fn decompose_schema<'py>(
-    py: Python<'py>,
-    schema: &Bound<'py, PyAny>,
-) -> PyResult<Bound<'py, PyAny>> {
-    let v = to_value(schema)?;
-    from_value(py, &json_schema_utils::decompose_schema(v))
-}
-
-#[pyfunction]
 #[pyo3(signature = (schema, mask=None, pattern=None, recursive=true))]
 fn out_mask_schema<'py>(
     py: Python<'py>,
@@ -225,7 +207,6 @@ fn synaops(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(suffix_json, m)?)?;
     m.add_function(wrap_pyfunction!(concatenate_json, m)?)?;
     m.add_function(wrap_pyfunction!(factorize_json, m)?)?;
-    m.add_function(wrap_pyfunction!(decompose_json, m)?)?;
     m.add_function(wrap_pyfunction!(out_mask_json, m)?)?;
     m.add_function(wrap_pyfunction!(in_mask_json, m)?)?;
 
@@ -234,7 +215,6 @@ fn synaops(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(suffix_schema, m)?)?;
     m.add_function(wrap_pyfunction!(concatenate_schema, m)?)?;
     m.add_function(wrap_pyfunction!(factorize_schema, m)?)?;
-    m.add_function(wrap_pyfunction!(decompose_schema, m)?)?;
     m.add_function(wrap_pyfunction!(out_mask_schema, m)?)?;
     m.add_function(wrap_pyfunction!(in_mask_schema, m)?)?;
 

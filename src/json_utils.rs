@@ -289,35 +289,3 @@ fn in_mask_value(
     }
 }
 
-/// Decompose a JSON object by expanding array properties into individual properties.
-///
-/// This is the inverse of `factorize_json`.
-pub fn decompose_json(json: Value) -> Value {
-    let map = match json {
-        Value::Object(m) => m,
-        other => return other,
-    };
-
-    let mut result = Map::with_capacity(map.len());
-
-    for (prop_key, prop_value) in map {
-        if is_plural(&prop_key) {
-            if let Value::Array(items) = prop_value {
-                let singular_key = to_singular_without_numerical_suffix(&prop_key);
-                for (i, item) in items.into_iter().enumerate() {
-                    if i == 0 {
-                        result.insert(singular_key.clone(), item);
-                    } else {
-                        result.insert(add_suffix(&singular_key, i), item);
-                    }
-                }
-            } else {
-                result.insert(prop_key, prop_value);
-            }
-        } else {
-            result.insert(prop_key, prop_value);
-        }
-    }
-
-    Value::Object(result)
-}

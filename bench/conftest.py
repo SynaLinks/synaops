@@ -19,7 +19,6 @@ JSON_FNS = [
     ("suffix_json", lambda f, d, **kw: f(d, "s")),
     ("concatenate_json", lambda f, d, **kw: f(d, d)),
     ("factorize_json", lambda f, d, **kw: f(d)),
-    ("decompose_json", lambda f, d, **kw: f(d)),
     (
         "out_mask_json",
         lambda f, d, **kw: f(d, mask=["answer", "item"], recursive=True),
@@ -39,7 +38,6 @@ SCHEMA_FNS = [
     ("suffix_schema", lambda f, s, **kw: f(s, "s")),
     ("concatenate_schema", lambda f, s, **kw: f(s, s)),
     ("factorize_schema", lambda f, s, **kw: f(s)),
-    ("decompose_schema", lambda f, s, **kw: f(s)),
     (
         "out_mask_schema",
         lambda f, s, **kw: f(s, mask=["answer", "item"], recursive=True),
@@ -51,8 +49,13 @@ SCHEMA_FNS = [
 ]
 
 
-def _resolve(name: str, module):
+def _resolve_py(name: str, module):
     # strip "_pattern" variant suffix used only to pick a different call shape
+    base = name.removesuffix("_pattern")
+    return getattr(module, f"_py_{base}")
+
+
+def _resolve_rs(name: str, module):
     base = name.removesuffix("_pattern")
     return getattr(module, base)
 
@@ -61,7 +64,7 @@ def _resolve(name: str, module):
 def ops_json():
     """Returns list of (name, py_fn, rs_fn, call_shape)."""
     return [
-        (name, _resolve(name, py_json), _resolve(name, rs), call)
+        (name, _resolve_py(name, py_json), _resolve_rs(name, rs), call)
         for name, call in JSON_FNS
     ]
 
@@ -69,7 +72,7 @@ def ops_json():
 @pytest.fixture
 def ops_schema():
     return [
-        (name, _resolve(name, py_sch), _resolve(name, rs), call)
+        (name, _resolve_py(name, py_sch), _resolve_rs(name, rs), call)
         for name, call in SCHEMA_FNS
     ]
 

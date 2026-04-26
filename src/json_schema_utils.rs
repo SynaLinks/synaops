@@ -51,22 +51,34 @@ fn take_object(schema: &mut Value, key: &str) -> Option<Map<String, Value>> {
     }
 }
 
-fn default_title_from_key(key: &str) -> String {
-    key.replace('_', " ")
-        .split_whitespace()
-        .map(|w| {
-            let mut chars = w.chars();
-            let c = chars.next().unwrap();
-            let upper = c.to_uppercase().collect::<String>();
-            let rest = chars.as_str();
-            format!("{upper}{rest}")
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
+/// Mirror of Python's `str.title()`: uppercase every alphabetic character
+/// that follows a non-alphabetic boundary, lowercase the rest. Underscores,
+/// digits, whitespace and other non-letters are kept literally — so
+/// `"a_foos".python_title() == "A_Foos"` (matching the Python reference),
+/// not `"A Foos"`.
+fn python_title(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut prev_alpha = false;
+    for ch in s.chars() {
+        if ch.is_alphabetic() {
+            if prev_alpha {
+                out.extend(ch.to_lowercase());
+            } else {
+                out.extend(ch.to_uppercase());
+            }
+            prev_alpha = true;
+        } else {
+            out.push(ch);
+            prev_alpha = false;
+        }
+    }
+    out
 }
 
-fn titlecase(s: &str) -> String {
-    default_title_from_key(s)
+/// Default title for a schema property when no explicit title is set:
+/// matches Python's `_default_title_from_key`, i.e. `key.replace("_", " ").title()`.
+fn default_title_from_key(key: &str) -> String {
+    python_title(&key.replace('_', " "))
 }
 
 /// Add a prefix to the schema properties.
@@ -76,7 +88,7 @@ pub fn prefix_schema(mut schema: Value, prefix: &str) -> Value {
     let mut new_properties = Map::with_capacity(n);
     let mut required: Vec<Value> = Vec::with_capacity(n);
 
-    let tc = titlecase(prefix);
+    let tc = python_title(prefix);
     for (prop_key, mut prop_value) in properties {
         let title = prop_value
             .get("title")
@@ -104,7 +116,7 @@ pub fn suffix_schema(mut schema: Value, suffix: &str) -> Value {
     let mut new_properties = Map::with_capacity(n);
     let mut required: Vec<Value> = Vec::with_capacity(n);
 
-    let tc = titlecase(suffix);
+    let tc = python_title(suffix);
     for (prop_key, mut prop_value) in properties {
         let title = prop_value
             .get("title")
@@ -306,7 +318,7 @@ pub fn factorize_schema(mut schema: Value) -> Value {
             let orig_type = prop_entries[i].1.get("type").cloned();
 
             let mut array_prop = std::mem::take(&mut prop_entries[i].1);
-            array_prop.insert("title".to_owned(), Value::String(titlecase(&plural_key)));
+            array_prop.insert("title".to_owned(), Value::String(python_title(&plural_key)));
             array_prop.insert("type".to_owned(), Value::String("array".to_owned()));
 
             if prop_is_array {
@@ -634,66 +646,3 @@ pub fn in_mask_schema(
     Ok(schema)
 }
 
-/// Decompose a JSON schema by expanding array properties into individual properties.
-pub fn decompose_schema(mut schema: Value) -> Value {
-    let title = take_key(&mut schema, "title").unwrap_or(Value::Null);
-    let defs = take_object(&mut schema, "$defs").unwrap_or_default();
-    let schema_properties = take_object(&mut schema, "properties").unwrap_or_default();
-
-    let n = schema_properties.len();
-    let mut out_props: Map<String, Value> = Map::with_capacity(n);
-    let mut out_required: Vec<Value> = Vec::with_capacity(n);
-
-    for (prop_key, mut prop_value) in schema_properties {
-        if is_plural(&prop_key) && is_array(&prop_value) {
-            let singular_key = to_singular_without_numerical_suffix(&prop_key);
-
-            // Pull items out so we can consume it without cloning.
-            let items_schema = prop_value
-                .as_object_mut()
-                .and_then(|m| m.remove("items"));
-            let mut individual_prop = prop_value;
-            individual_prop.insert(
-                "title".to_owned(),
-                Value::String(titlecase(&singular_key)),
-            );
-
-            if let Some(items_schema) = items_schema {
-                if let Value::Object(mut items_obj) = items_schema {
-                    if let Some(item_type) = items_obj.remove("type") {
-                        individual_prop.insert("type".to_owned(), item_type);
-                    } else {
-                        individual_prop.remove("type");
-                        for (k, v) in items_obj {
-                            individual_prop.insert(k, v);
-                        }
-                    }
-                } else {
-                    individual_prop.remove("type");
-                }
-            } else {
-                individual_prop.insert(
-                    "type".to_owned(),
-                    Value::String("string".to_owned()),
-                );
-            }
-
-            out_required.push(Value::String(singular_key.clone()));
-            out_props.insert(singular_key, individual_prop);
-        } else {
-            out_required.push(Value::String(prop_key.clone()));
-            out_props.insert(prop_key, prop_value);
-        }
-    }
-
-    let mut result_schema = Value::Object(Map::with_capacity(6));
-    result_schema.insert("additionalProperties".to_owned(), Value::Bool(false));
-    if !defs.is_empty() {
-        result_schema.insert("$defs".to_owned(), Value::Object(defs));
-    }
-    result_schema.insert("properties".to_owned(), Value::Object(out_props));
-    result_schema.insert("required".to_owned(), Value::Array(out_required));
-    result_schema.insert("title".to_owned(), title);
-    result_schema.insert("type".to_owned(), Value::String("object".to_owned()));
-    result_schema
-}
