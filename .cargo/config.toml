@@ -1,0 +1,11 @@
+# PyO3 abi3 builds on macOS need `-undefined dynamic_lookup` so Python C API
+# symbols are deferred to runtime (Python resolves them when it loads the
+# extension). PyO3's `extension-module` feature is supposed to add this via
+# build.rs but the flag isn't reliably applied for abi3 on Apple Silicon —
+# pinning it here avoids the linker error.
+
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+
+[target.x86_64-apple-darwin]
+rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
