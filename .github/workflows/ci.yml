@@ -70,4 +70,5 @@ jobs:
           maturin develop --release
 
       - name: Import smoke test
-        run: python -c "import synaops; print(synaops.prefix_json({'a': 1}, 'pre'))"
+        run: |
+          python -c "import synaops; print(synaops.prefix_json({'a': 1}, 'pre'))"
