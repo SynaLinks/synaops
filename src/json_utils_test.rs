@@ -414,7 +414,25 @@ fn test_in_mask_deeply_nested() {
 }
 
 #[test]
-fn test_in_mask_in_array() {
+fn test_in_mask_in_array_drops_unmatched_array() {
+    // An array whose key is not in the mask is dropped, like an unmatched
+    // object, keeping the value masker consistent with the schema masker.
+    let json = v(json!({
+        "items": [
+            {"foo": "test", "bar": "test"},
+            {"foo_1": "test", "bar_1": "test"}
+        ]
+    }));
+    let expected = v(json!({}));
+
+    let result = in_mask_json(&json, Some(&["foo"]), true);
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_in_mask_keeps_matched_array_and_masks_items() {
+    // When the array key matches the mask, the array is kept and its items
+    // are masked recursively.
     let json = v(json!({
         "items": [
             {"foo": "test", "bar": "test"},
@@ -428,7 +446,7 @@ fn test_in_mask_in_array() {
         ]
     }));
 
-    let result = in_mask_json(&json, Some(&["foo"]), true);
+    let result = in_mask_json(&json, Some(&["item", "foo"]), true);
     assert_eq!(result, expected);
 }
 

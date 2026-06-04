@@ -260,10 +260,19 @@ fn in_mask_value(
                             }
                         }
                         Value::Array(_) => {
-                            result.insert(
-                                key.clone(),
-                                in_mask_value(val, mask, pattern, true),
-                            );
+                            // Like objects, an array is kept only when its key
+                            // matches the mask/pattern; when kept, its items
+                            // are masked recursively. Force-keeping arrays made
+                            // the value masker disagree with the schema masker
+                            // (which drops unmatched arrays), leaving stray list
+                            // fields on the output and breaking, e.g., ExactMatch
+                            // field comparisons.
+                            if keep {
+                                result.insert(
+                                    key.clone(),
+                                    in_mask_value(val, mask, pattern, true),
+                                );
+                            }
                         }
                         _ => {
                             if keep {
