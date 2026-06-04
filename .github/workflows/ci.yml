@@ -35,9 +35,14 @@ jobs:
           pip install .
 
       - name: Parity tests
-        # synalinks requires Python >=3.11; synaops itself still supports 3.10,
-        # so we build/import it on 3.10 but only run the parity suite on 3.11+.
-        if: matrix.python-version != '3.10'
+        # Parity pulls in synalinks -> litellm. synaops itself supports the
+        # whole 3.10-3.14 matrix (built/imported above), but the reference
+        # stack constrains where the parity suite can run:
+        #   - synalinks requires Python >=3.11  (excludes 3.10)
+        #   - litellm declares Requires-Python <3.14 (excludes 3.14)
+        # so the parity suite runs on 3.11-3.13. Revisit the 3.14 skip once
+        # litellm raises its upper Python bound.
+        if: matrix.python-version != '3.10' && matrix.python-version != '3.14'
         run: |
           pip install git+https://github.com/SynaLinks/synalinks.git
           pytest bench/test_parity.py -v
