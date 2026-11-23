@@ -76,3 +76,5 @@ Cargo.lock.bak
 # OS
 .DS_Store
 Thumbs.db
+# Local agent session state
+task_tracker.json
