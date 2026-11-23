@@ -370,6 +370,11 @@ pub fn factorize_schema(mut schema: Value) -> Value {
             let prop_value = std::mem::take(&mut prop_entries[i].1);
             out_required.push(Value::String(base_key.clone()));
             out_props.insert(base_key.clone(), prop_value);
+        } else if is_plural_key && !has_siblings {
+            // A plural with siblings is covered by the array grouped from them.
+            let (key, prop_value) = std::mem::take(&mut prop_entries[i]);
+            out_required.push(Value::String(key.clone()));
+            out_props.insert(key, prop_value);
         }
     }
 

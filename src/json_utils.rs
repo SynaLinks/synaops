@@ -131,6 +131,11 @@ pub fn factorize_json(json: Value) -> Value {
             }
         } else if !is_plural_key {
             result.insert(base_key.clone(), prop_value);
+        } else if let (Some(Value::Array(arr)), Value::Array(items)) =
+            (result.get_mut(&prop_key), &prop_value)
+        {
+            // Extend a list already grouped from its singular siblings.
+            arr.extend(items.iter().cloned());
         } else {
             result.insert(prop_key, prop_value);
         }
